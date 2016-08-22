@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Spotify Playlist/Track ID Resolver</title>
+    <meta name="author" content="milan@fastmail.com" />
+    <meta name="description" content="Resolve whole playlists of Spotify track ids" />
+
+    <style type="text/css">
+        body {
+            margin: 40px auto;
+            max-width: 960px;
+            line-height: 1.4;
+            font-size: 18px;
+            color: #444;
+            padding: 0 10px;
+            font-family: Arial,'Helvetica Neue',Helvetica,sans-serif;
+        }
+
+        body.waiting * {
+            cursor: wait;
+        }
+
+        h1, h2, h3 {
+            line-height: 1.1;
+        }
+
+        h4 {
+            line-height: 0.8;
+        }
+
+        textarea
+        {
+            width: 100%;
+        }
+
+        #wrapper {
+            width: 96%;
+            overflow: hidden;
+        }
+
+        .container {
+            width: inherit;
+            padding: 5px;
+        }
+
+        .right-aligned {
+            float: right;
+        }
+
+        .left-aligned {
+            float: left;
+        }
+
+        #btn {
+            width: 125px;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div id="wrapper">
+            <h1>Spotify Playlist/Track ID Resolver</h1>
+
+            <h4>Resolves playlist information from Spotify track ids</h4>
+            <p><b>Instructions:</b> In the Spotify client, select all tracks in the playlist, right click &rarr; Copy Spotify URI. Now paste your clipboard contents down below and press the button to resolve the tracks according to the specified schema.</p>
+
+            <div class="container">
+                Spotify Track IDs
+                <small>(paste clipboard contents here)</small>
+                <textarea id="tracks" cols="50" rows="35">spotify:track:6JEK0CvvjDjjMUBFoXShNZ</textarea>
+            </div>
+            <div class="container">
+                <div class="left-aligned">
+                    <button type="button" id="btn" onclick="resolveClicked()">Resolve tracks!</button>
+                </div>
+                <div class="right-aligned">
+                    <small><b>Schema:</b> (%artist, %title and %album are supported)</small>
+                    <input type="text" id="schema" value="%artist - %title" />
+                </div>
+                <textarea id="results" cols="50" rows="35"> </textarea>
+            </div>
+            <p>Note: Due to rate limiting in the Spotify Web API, all requests are spread out over time. Please be patient when resolving large playlists</p>
+        </div>
+    </main>
+
+    <footer>
+        <img src="data:image/png;base64,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" />
+    </footer>
+
+    <script>
+        function resolveClicked() {
+            var btn = document.getElementById("btn");
+            var track_area = document.getElementById("tracks");
+            var results_area = document.getElementById("results");
+            var schema_input = document.getElementById("schema");
+
+            btn.innerHTML = "Resolving...";
+            btn.disabled = true;
+            track_area.disabled = true;
+            results_area.disabled = true;
+            schema_input.disabled = true;
+            document.body.classList.add('waiting');
+
+            results_area.value = "";
+
+            var responses = 0;
+            var num_requests = 0;
+            var tracks = parseTrackIDs();
+            if (tracks.length > 0) {
+                var uris = createURIs(tracks);
+                num_requests = uris.length;
+
+                var handleRequest = function (uri) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('get', uri, true);
+                    xhr.responseType = 'json';
+                    xhr.timeout = 10000;
+                    xhr.ontimeout = function (e) {
+                        responses++;
+                    };
+                    xhr.onload = function () {
+                        responses++;
+                        var status = xhr.status;
+                        if (status == 200) {
+                            handleResponse(xhr.response);
+                        }
+                    };
+                    xhr.send();
+                };
+
+                for (i = 0; i < num_requests; i++) {
+                    var uri = uris[i];
+                    setTimeout(handleRequest, 2500 * i, uri);
+                }
+            }
+            
+            var timer = setInterval(function () {
+                if (responses == num_requests) {
+                    clearInterval(timer);
+                    btn.innerHTML = "Resolve tracks!";
+                    btn.disabled = false;
+                    track_area.disabled = false;
+                    results_area.disabled = false;
+                    schema_input.disabled = false;
+                    document.body.classList.remove('waiting');
+                }
+            }, 100);
+        }
+
+        function parseTrackIDs()
+        {
+            var regex = /spotify:track:(.{22})/gm;
+            var val = document.getElementById("tracks").value;
+            var results = [];
+
+            var match = regex.exec(val);
+            while (match != null) {
+                results.push(match[1]);
+                match = regex.exec(val);
+            }
+
+            return results;
+        }
+
+        function createURIs(tracks) {
+            var uris = [];
+            var done = 0;
+            var remaining = tracks.length;
+            var limit = 50;
+
+            while (remaining > 0) {
+                var current_batch = remaining > limit ? limit : remaining;
+                var batch_tracks = [];
+                for (i = 0; i < current_batch; i++) {
+                    batch_tracks.push(tracks[done + i]);
+                }
+
+                var uri = "https://api.spotify.com/v1/tracks?ids=";
+                uri += batch_tracks.join();
+                uris.push(uri);
+
+                done += current_batch;
+                remaining -= current_batch;
+            }
+
+            return uris;
+        }
+
+        function handleResponse(response) {
+            var tracks = response.tracks;
+            if (tracks != undefined && tracks.length > 0) {
+                var res = document.getElementById("results");
+                var schema = document.getElementById("schema").value;
+
+                var results = [];
+                for (i = 0; i < tracks.length; i++) {
+                    var title = tracks[i].name;
+                    var artist = tracks[i].artists[0].name;
+                    var album = tracks[i].album.name;
+                    if (title != undefined && artist != undefined && album != undefined) {
+                        var str = schema.replace("%title", title);
+                        str = str.replace("%artist", artist);
+                        str = str.replace("%album", album);
+                        results.push(str);
+                    }
+                }
+
+                res.value += results.join("\n") + "\n";
+            }
+        }
+    </script>
+</body>
+</html>
